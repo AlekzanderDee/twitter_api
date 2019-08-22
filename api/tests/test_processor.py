@@ -85,7 +85,7 @@ class ProcessorTestCase(TestCase):
         def _set_event(e):
             e.set()
 
-        timer = Timer(2, _set_event, (stop_event, ))
+        timer = Timer(1, _set_event, (stop_event, ))
         timer.start()
 
         processor._accumulate_messages()

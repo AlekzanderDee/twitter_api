@@ -46,11 +46,10 @@ class TweetsStreamer:
             authenticator.authenticate()
             self.auth = authenticator.provide_auth()
 
-    def _read_stream(self, stop_event, url, body):
+    def _read_stream(self, url, body):
         """
         Read from stream and yield none-empty message (omitting ping-alive empty strings)
         Args:
-            stop_event: threading Event instance
             url: stream URL
             body: request body
 
@@ -61,10 +60,10 @@ class TweetsStreamer:
         logger.info('Reading from stream...')
         resp = requests.post(url, stream=True, auth=self.auth, data=body)
         for line in resp.iter_lines():
-            if stop_event.is_set():
+            if self.stop_event.is_set():
                 logger.info('Exiting the stream')
                 break
-            # filter out keep-alive new lines
+            # filter out 'keep-alive' empty lines
             if line:
                 yield line
 
@@ -91,7 +90,5 @@ class TweetsStreamer:
         body = {'track': track}
         self.barrier.wait()
 
-        for line in self._read_stream(self.stop_event, url, body):
-            # filter out keep-alive new lines
-            if line:
-                self.input_queue.put(line)
+        for line in self._read_stream(url, body):
+            self.input_queue.put(line)
