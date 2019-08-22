@@ -11,7 +11,7 @@ Python 3.7.3
 2. Activate virtual environment and install 
 all dependencies from `requirements.txt`
 3. Make sure you have Twitter Consumer API Key (client key) and 
-Twitter Consumer API Secret Key (secret key) available
+Twitter Consumer API Secret Key (secret key) available (see [developers information](https://developer.twitter.com/en/docs/basics/getting-started) for more details )
 
 ### Running the CLI
 You can get quick help information about the usage by typing and executing the following command:
@@ -37,7 +37,7 @@ and dumps received information into a tab-separated file. File contains the foll
 - User screen name
 
 The information is grouped by user and ordered ascending by the  `User creation date (epoch)` and then by the `Message creation date (epoch)` 
-(please note that ordering is based on the creation data value, not the age of the user or wteet)
+(please note that ordering is based on the creation date value, not the age of the user or tweet)
 
 **Example usage**
 
