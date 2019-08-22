@@ -25,13 +25,10 @@ class BaseAuthenticator(ABC):
 
 
 class PINAuthenticator(BaseAuthenticator):
-    """
-    Authenticator that implements PIN-based OAuth
-    """
 
     def __init__(self, api_key, api_secret_key):
         """
-        PINAuthenticator constructor
+        PINAuthenticator implements PIN-based OAuth
 
         Args:
             api_key: application API Key
@@ -53,7 +50,7 @@ class PINAuthenticator(BaseAuthenticator):
 
     def _fetch_request_token(self):
         """
-        Fetch and set request token, which will be used during the access token acquisition
+        Fetch and set request tokens, which will be used during the access token acquisition
 
         Returns:
             tuple of token and secret token
@@ -68,7 +65,8 @@ class PINAuthenticator(BaseAuthenticator):
 
     def _fetch_access_token(self, pin):
         """
-        Using request tokens, fetch access token.
+        Fetch access token using the request tokens.
+
         Args:
             pin: A verifier string to prove authorization was granted.
 
@@ -101,7 +99,7 @@ class PINAuthenticator(BaseAuthenticator):
 
     def provide_auth(self):
         """
-        Return the auth object that will be used for signing HTTP requests.
+        Return the auth object that may be used for signing the HTTP requests.
 
         Returns:
             OAuth instance

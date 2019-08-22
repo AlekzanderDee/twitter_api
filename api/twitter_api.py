@@ -10,10 +10,10 @@ from .tweets_streamer import TweetsStreamer
 logger = logging.getLogger(__name__)
 
 
-class Consumer:
+class TwitterAPI:
     def __init__(self, api_key, api_secret_key, time_limit=30, message_limit=100):
         """
-        Consumer class that provides a functionality to fetch tweets from the Streamer
+        TwitterAPI class that provides a functionality to fetch tweets from the Streamer
 
         Args:
             api_key: client API Key
@@ -71,7 +71,7 @@ class Consumer:
         )
         self.streamer_thread.start()
 
-        limiter = Limiter(self.time_limit, messages_queue, self.barrier, self.stop_event)
+        limiter = Limiter(self.time_limit, self.message_limit, messages_queue, self.barrier, self.stop_event)
         self.limiter_thread = Thread(
             name='limiter',
             target=limiter.start,

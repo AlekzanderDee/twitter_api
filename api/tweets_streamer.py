@@ -36,7 +36,7 @@ class TweetsStreamer:
 
     def _authenticate(self):
         """
-        Using the auth class, authenticate application for further streaming from protected endpoints
+        Using the auth class, authenticate application for further streaming from the protected endpoints
 
         Returns:
             None
@@ -49,6 +49,7 @@ class TweetsStreamer:
     def _read_stream(self, url, body):
         """
         Read from stream and yield none-empty message (omitting ping-alive empty strings)
+
         Args:
             url: stream URL
             body: request body
@@ -58,7 +59,8 @@ class TweetsStreamer:
 
         """
         logger.info('Reading from stream...')
-        resp = requests.post(url, stream=True, auth=self.auth, data=body)
+        # TODO: add error handling (timeouts specifically)
+        resp = requests.post(url, stream=True, auth=self.auth, data=body, timeout=90.0)
         for line in resp.iter_lines():
             if self.stop_event.is_set():
                 logger.info('Exiting the stream')

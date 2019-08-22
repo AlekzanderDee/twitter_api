@@ -32,6 +32,7 @@ class TweetsProcessor:
     def _check_is_tweet(data):
         """
         Check if a supplied payload looks like a tweet.
+
         Args:
             data: Python dict object with a payload that should be tested
 
@@ -62,11 +63,11 @@ class TweetsProcessor:
         Returns:
             None
         """
-        # While there is anything in the input queue OR STOP event is not set, process the data
+
         while not self.stop_event.is_set():
-            # If message queue is full, there is no reason to wait
+            # If message queue is full, there is no reason to wait any further
             if self.message_queue.full():
-                logger.error('Message queue full. Do not accumulate more tweets.')
+                logger.warning('Message queue full. Do not accumulate more tweets.')
                 self.stop_event.set()
                 continue
 
@@ -80,7 +81,7 @@ class TweetsProcessor:
             json_message = json.loads(decoded_line)
 
             if not self._check_is_tweet(json_message):
-                logger.warning('Do not process a message that seems like an event: %s', json_message)
+                logger.warning('A message does not look like an event: %s. Skipping that message.', json_message)
                 continue
 
             logger.info('Received a message (ID %s)', json_message['id_str'])
@@ -89,7 +90,7 @@ class TweetsProcessor:
                 self.message_ids.add(json_message['id_str'])
             else:
                 logger.error(
-                    'Did not add message (ID %s) to the message_queue (duplicated ID)',
+                    'Did not add duplicated message (ID %s) to the message_queue',
                     json_message['id_str']
                 )
 
@@ -150,7 +151,7 @@ class TweetsProcessor:
 
     def start(self):
         """
-        Start processor: accumulate messages til the STOP event is set, than dump them to the file
+        Start processor: accumulate messages til the STOP event is set, then dump them to the file
 
         Returns:
             None
