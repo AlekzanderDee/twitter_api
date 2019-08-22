@@ -67,7 +67,8 @@ class TweetsProcessor:
             # If message queue is full, there is no reason to wait
             if self.message_queue.full():
                 logger.error('Message queue full. Do not accumulate more tweets.')
-                return
+                self.stop_event.set()
+                continue
 
             try:
                 message = self.input_queue.get(timeout=1)
