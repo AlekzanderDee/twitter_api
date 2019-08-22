@@ -39,24 +39,36 @@ class TweetsProcessor:
             bool, True id the data looks like a tweet
 
         """
+        if not data or not isinstance(data, dict):
+            return False
+        data_keys_set = set(data.keys())
+
         event_keys = {'limit', 'disconnect', 'warning', 'delete', 'scrub_geo', 'status_withheld',
                       'user_withheld', 'event'}
-        if set(data.keys()) & event_keys:
+
+        if not data or data_keys_set & event_keys:
             return False
+
+        message_keys = {'id_str', 'created_at', 'text', 'user'}
+        if not message_keys <= data_keys_set:
+            return False
+
         return True
 
-    def _accumulate_messages(self, stop_event):
+    def _accumulate_messages(self):
         """
         Process the input queue and accumulate unique (based on ID) tweets in the message queue
-
-        Args:
-            stop_event: threading Event instance
 
         Returns:
             None
         """
         # While there is anything in the input queue OR STOP event is not set, process the data
-        while not self.input_queue.empty() or not stop_event.is_set():
+        while not self.stop_event.is_set():
+            # If message queue is full, there is no reason to wait
+            if self.message_queue.full():
+                logger.error('Message queue full. Do not accumulate more tweets.')
+                return
+
             try:
                 message = self.input_queue.get(timeout=1)
             except queue.Empty:
@@ -71,12 +83,12 @@ class TweetsProcessor:
                 continue
 
             logger.info('Received a message (ID %s)', json_message['id_str'])
-            if not self.message_queue.full() and json_message['id_str'] not in self.message_ids:
+            if json_message['id_str'] not in self.message_ids:
                 self.message_queue.put(json_message)
-                self.message_ids.add(json_message['id'])
+                self.message_ids.add(json_message['id_str'])
             else:
                 logger.error(
-                    'Did not add message (ID %s) to the message_queue (possible duplicate or the message queue is full)',
+                    'Did not add message (ID %s) to the message_queue (duplicated ID)',
                     json_message['id_str']
                 )
 
@@ -144,5 +156,5 @@ class TweetsProcessor:
         """
         self.barrier.wait()
         logger.info('Starting TweetsProcessor')
-        self._accumulate_messages(self.stop_event)
+        self._accumulate_messages()
         self._output_data()
