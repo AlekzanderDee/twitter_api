@@ -2,10 +2,10 @@ import logging
 import queue
 from threading import Thread, Event, Barrier
 
-from auth import PINAuthenticator
-from limiter import Limiter
-from tweets_processor import TweetsProcessor
-from tweets_streamer import TweetsStreamer
+from .auth import PINAuthenticator
+from .limiter import Limiter
+from .tweets_processor import TweetsProcessor
+from .tweets_streamer import TweetsStreamer
 
 logger = logging.getLogger(__name__)
 

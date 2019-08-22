@@ -2,7 +2,7 @@ import logging
 import json
 import queue
 
-from models import User, Tweet
+from .models import User, Tweet
 
 logger = logging.getLogger(__name__)
 

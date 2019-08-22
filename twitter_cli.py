@@ -1,7 +1,7 @@
 import logging
 
 import click
-from tweets_consumer import Consumer
+from api.tweets_consumer import Consumer
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s :: %(name)s :: %(lineno)d')
