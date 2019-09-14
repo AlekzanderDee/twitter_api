@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,8 @@ class Limiter:
             if self.message_queue.full():
                 logger.warning('Message queue is full. Stopping further streaming')
                 break
+            # Relax CPU usage:
+            time.sleep(0.1)
 
         logger.info('Emitting STOP event')
         self.stop_event.set()

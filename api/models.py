@@ -25,7 +25,12 @@ class User:
             logger.error('Invalid payload supplied during the user creation: %s', user_payload)
             return None
 
-        return cls(**user_payload)
+        return cls(
+            id_str=user_payload['id_str'],
+            name=user_payload['name'],
+            screen_name=user_payload['screen_name'],
+            created_at=user_payload['created_at'],
+        )
 
     def __hash__(self):
         return hash(self.id_str)
@@ -62,7 +67,11 @@ class Tweet:
             logger.error('Invalid payload supplied during the tweet creation: %s', tweet_payload)
             return None
 
-        return cls(**tweet_payload)
+        return cls(
+            id_str=tweet_payload['id_str'],
+            created_at=tweet_payload['created_at'],
+            text=tweet_payload['text'],
+        )
 
     def __hash__(self):
         return hash(self.id_str)

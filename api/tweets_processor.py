@@ -1,3 +1,4 @@
+import csv
 import logging
 import json
 import queue
@@ -5,6 +6,28 @@ import queue
 from .models import User, Tweet
 
 logger = logging.getLogger(__name__)
+
+
+class TweetsWriter(csv.DictWriter):
+
+    def __init__(self, f, restval="", extrasaction="raise",
+                 dialect="excel", *args, **kwds):
+        fieldnames = ['tweet_str_id', 'tweet_creation_dt', 'tweet_text',
+                      'user_str_id', 'user_creation_dt', 'user_name', 'user_screen_name']
+        self.header = {
+            'tweet_str_id': 'Message ID',
+            'tweet_creation_dt': 'Message creation date (epoch)',
+            'tweet_text': 'Text',
+            'user_str_id': 'User ID',
+            'user_creation_dt': 'User creation date (epoch)',
+            'user_name': 'User name',
+            'user_screen_name': 'User screen name'
+        }
+
+        super().__init__(f, fieldnames, restval, extrasaction, dialect, *args, **kwds)
+
+    def writeheader(self):
+        self.writerow(self.header)
 
 
 class TweetsProcessor:
@@ -65,12 +88,6 @@ class TweetsProcessor:
         """
 
         while not self.stop_event.is_set():
-            # If message queue is full, there is no reason to wait any further
-            if self.message_queue.full():
-                logger.warning('Message queue full. Do not accumulate more tweets.')
-                self.stop_event.set()
-                continue
-
             try:
                 message = self.input_queue.get(timeout=1)
             except queue.Empty:
@@ -86,7 +103,13 @@ class TweetsProcessor:
 
             logger.info('Received a message (ID %s)', json_message['id_str'])
             if json_message['id_str'] not in self.message_ids:
-                self.message_queue.put(json_message)
+                try:
+                    self.message_queue.put(json_message, timeout=0)
+                except queue.Full:
+                    logger.warning('The message queue is already full')
+                    # In this case, mos likely, the STOP_EVENT will be set by Limiter on the next iteration
+                    # and loop will quit
+                    continue
                 self.message_ids.add(json_message['id_str'])
             else:
                 logger.error(
@@ -104,6 +127,7 @@ class TweetsProcessor:
         logger.info('Exporting messages...')
         user_mapping = {}
         while not self.message_queue.empty():
+            # Expecting only one queue consumer
             message = self.message_queue.get()
 
             user_id_str = message['user']['id_str']
@@ -124,30 +148,22 @@ class TweetsProcessor:
                 logger.error('Can not instantiate Tweet object from the payload. Skipping entry...')
 
         users = sorted(user_mapping.values(), key=lambda user: user.created_at)
-        separator = '\t'
         logger.info('Writing messages to the file "%s"', self.filename)
-        with open(self.filename, 'w') as f:
-            f.write(separator.join((
-                'Message ID',
-                'Message creation date (epoch)',
-                'Text',
-                'User ID',
-                'User creation date (epoch)',
-                'User name',
-                'User screen name'
-            )))
+        with open(self.filename, 'w', newline='') as csvfile:
+            writer = TweetsWriter(csvfile, delimiter='\t', quoting=csv.QUOTE_NONNUMERIC)
+            writer.writeheader()
+
             for user in users:
                 for tweet in user.tweets:
-                    f.write('\r\n')
-                    f.write(separator.join((
-                        tweet.id_str,
-                        str(tweet.created_at.timestamp()),
-                        tweet.text.encode('unicode_escape').decode(self.encoding),
-                        user.id_str,
-                        str(user.created_at.timestamp()),
-                        user.name,
-                        user.screen_name
-                    )))
+                    writer.writerow({
+                        'tweet_str_id': tweet.id_str,
+                        'tweet_creation_dt': str(tweet.created_at.timestamp()),
+                        'tweet_text': tweet.text.encode('unicode_escape').decode(self.encoding),
+                        'user_str_id': user.id_str,
+                        'user_creation_dt': str(user.created_at.timestamp()),
+                        'user_name': user.name,
+                        'user_screen_name': user.screen_name
+                    })
 
     def start(self):
         """
